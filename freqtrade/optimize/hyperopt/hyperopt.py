@@ -16,7 +16,7 @@ import rapidjson
 from joblib import Parallel, cpu_count, delayed, wrap_non_picklable_objects
 
 from freqtrade.constants import FTHYPT_FILEVERSION, LAST_BT_RESULT_FN, Config
-from freqtrade.enums import HyperoptState
+from freqtrade.enums import HyperoptState, RPCMessageType
 from freqtrade.exceptions import OperationalException
 from freqtrade.misc import file_dump_json, plural
 from freqtrade.optimize.hyperopt.hyperopt_logger import logging_mp_handle, logging_mp_setup
@@ -27,6 +27,7 @@ from freqtrade.optimize.hyperopt_tools import (
     HyperoptTools,
     hyperopt_serializer,
 )
+from freqtrade.rpc import RPCManager
 from freqtrade.util import get_progress_tracker
 
 
@@ -93,6 +94,14 @@ class Hyperopt:
         self.print_json = self.config.get("print_json", False)
 
         self.hyperopter = HyperOptimizer(self.config)
+        self.rpc: RPCManager = RPCManager(self)
+
+    def notify_status(self, msg: str, msg_type=RPCMessageType.STATUS) -> None:
+        """
+        Public method for users of this class (worker, etc.) to send notifications
+        via RPC about changes in the bot status.
+        """
+        self.rpc.send_msg({"type": msg_type, "status": msg})
 
     @staticmethod
     def get_lock_filename(config: Config) -> str:
@@ -248,6 +257,7 @@ class Hyperopt:
         log_queue = m.Queue()
 
     def start(self) -> None:
+        self.notify_status({"type": "hyperopt", "state": "start"})
         self.random_state = self._set_random_state(self.config.get("hyperopt_random_state"))
         logger.info(f"Using optimizer random state: {self.random_state}")
         self.hyperopt_table_header = -1
@@ -300,15 +310,27 @@ class Hyperopt:
 
                             self.evaluate_result(val, current, is_random[j])
                             pbar.update(task, advance=1)
+                            self.notify_status(
+                                {
+                                    "type": "hyperopt",
+                                    "state": "progress",
+                                    "n_rest": n_rest,
+                                    "current_jobs": current_jobs,
+                                    "current": current,
+                                }
+                            )
                         logging_mp_handle(log_queue)
 
         except KeyboardInterrupt:
             print("User interrupted..")
+            self.notify_status({"type": "hyperopt", "state": "user interrupted"})
 
         logger.info(
             f"{self.num_epochs_saved} {plural(self.num_epochs_saved, 'epoch')} "
             f"saved to '{self.results_file}'."
         )
+
+        self.notify_status({"type": "hyperopt", "state": "done", "filename": self.results_file})
 
         if self.current_best_epoch:
             HyperoptTools.try_export_params(

@@ -134,6 +134,9 @@ class Worker:
                 logger.info(
                     f"Bot heartbeat. PID={getpid()}, version='{version}', state='{state.name}'"
                 )
+                self.freqtrade.notify_status(
+                    {"type": "heartbeat", "version": version, "state": state.name.lower()}
+                )
                 self._heartbeat_msg = now
 
         return state
