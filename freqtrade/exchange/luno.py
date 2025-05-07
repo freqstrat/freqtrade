@@ -18,5 +18,7 @@ class Luno(Exchange):
     """
 
     _ft_has: FtHas = {
-        "ohlcv_partial_candle": False,
+        "ohlcv_partial_candle": True,
+        "ohlcv_candle_limit": 1000,
+        "l2_limit_range": [25],
     }
