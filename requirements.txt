@@ -4,7 +4,7 @@ bottleneck==1.4.2
 numexpr==2.10.2
 pandas-ta==0.3.14b
 
-ccxt==4.4.78
+ccxt==4.4.80
 cryptography==44.0.3
 aiohttp==3.9.5
 SQLAlchemy==2.0.40
@@ -15,7 +15,7 @@ humanize==4.12.3
 cachetools==5.5.2
 requests==2.32.3
 urllib3==2.4.0
-certifi==2025.01.31
+certifi==2025.4.26
 jsonschema==4.23.0
 TA-Lib==0.4.38
 technical==1.5.0
