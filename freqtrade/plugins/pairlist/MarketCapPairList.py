@@ -47,6 +47,10 @@ class MarketCapPairList(IPairList):
             is_demo=_coingecko_config.get("is_demo", True),
         )
 
+        api_url_base = _coingecko_config.get("url", "")
+        if api_url_base:
+            self._coingecko.api_base_url = api_url_base
+
         if self._categories:
             categories = self._coingecko.get_coins_categories_list()
             category_ids = [cat["category_id"] for cat in categories]

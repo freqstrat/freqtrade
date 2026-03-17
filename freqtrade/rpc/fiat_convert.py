@@ -52,6 +52,11 @@ class CryptoToFiatConverter(LoggingMixin, metaclass=SingletonMeta):
             is_demo=_coingecko_config.get("is_demo", True),
             retries=1,
         )
+
+        api_url_base = _coingecko_config.get("url", "")
+        if api_url_base:
+            self._coingecko.api_base_url = api_url_base
+
         LoggingMixin.__init__(self, logger, 3600)
         self._load_cryptomap()
 
